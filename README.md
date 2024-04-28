@@ -1,4 +1,4 @@
-# @intechnity/react-native-thermal-printer
+# @impelsys/react-native-thermal-printer
 
 Fork of `@intechnity/react-native-thermal-printer` with added `printRawData` method.
 
@@ -53,7 +53,7 @@ Supported attributes:
 
 ## IPrintOptions
 
-`IPrintOptions` is an interface that provides various options you can use for a print job when working with the `@intechnity/react-native-thermal-printer` library.
+`IPrintOptions` is an interface that provides various options you can use for a print job when working with the `@impelsys/react-native-thermal-printer` library.
 
 ### Options
 
@@ -97,7 +97,7 @@ The `codepage` option specifies the code page that the printer should use to pri
 import {
   IBLEPrinterIdentity,
   BLEPrinter,
-} from "@intechnity/react-native-thermal-printer";
+} from "@impelsys/react-native-thermal-printer";
 
 await BLEPrinter.init();
 const devices = await BLEPrinter.getDeviceList();
@@ -127,7 +127,7 @@ BLEPrinter.print(`
   import {
     USBPrinter,
     IUSBPrinterIdentity
-  } from '@intechnity/react-native-thermal-printer';
+  } from '@impelsys/react-native-thermal-printer';
   import base64 from "react-native-base64";
   ...
 
@@ -208,7 +208,7 @@ BLEPrinter.print(`
   import {
     BLEPrinter,
     IBLEPrinterIdentity
-  } from '@intechnity/react-native-thermal-printer';
+  } from '@impelsys/react-native-thermal-printer';
 
   ...
 
@@ -275,7 +275,7 @@ _Note:_ getDeviceList does support scanning in local network, but is not recomme
   import {
     NetPrinter,
     INetPrinterIdentity
-  } from '@intechnity/react-native-thermal-printer';
+  } from '@impelsys/react-native-thermal-printer';
 
   ...
 
