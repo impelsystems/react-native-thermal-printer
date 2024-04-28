@@ -1,8 +1,10 @@
 # @intechnity/react-native-thermal-printer
 
-Fork of `react-native-thermal-receipt-printer` with added support for locales and QR Code Printing.
+Fork of `@intechnity/react-native-thermal-printer` with added `printRawData` method.
 
-[react-native-thermal-receipt-printer](https://github.com/HeligPfleigh/react-native-thermal-receipt-printer)
+Also bumps Android `build.gradle` compileSdkVersion and buildToolsVersion to 31.
+
+[@intechnity/react-native-thermal-printer](https://github.com/Intechnity-com/react-native-thermal-printer)
 
 ## Predefined tags
 
@@ -126,7 +128,7 @@ BLEPrinter.print(`
     USBPrinter,
     IUSBPrinterIdentity
   } from '@intechnity/react-native-thermal-printer';
-
+  import base64 from "react-native-base64";
   ...
 
   type State = {
@@ -162,6 +164,21 @@ BLEPrinter.print(`
   <NewLine />
   <Text align='right' fontWidth='1' fontHeight='1' bold='0'>Second line</Text>
 </Printout>`);
+  }
+
+  printRawData() {
+      USBPrinter.printRawData(
+        base64.encode(`^XA
+^MMT
+^PQ1
+^LH0,0
+^LS0
+^LT8
+^PW384
+^LL184
+^FO0,8,0^A0N,32,33.60^FB384,1,0,L^CI28^FDExample ZPL text^FS
+^XZ`)
+      );
   }
   
   getPrinterDescription(printer: IUSBPrinterIdentity) {

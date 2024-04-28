@@ -33,4 +33,10 @@ export class BasePrinter<T> {
       console.warn(error)
     );
   }
+
+  printRawData(data: string): void {
+    this.module.printRawData(data, (error: Error) =>
+      console.warn(error)
+    );
+  }
 }

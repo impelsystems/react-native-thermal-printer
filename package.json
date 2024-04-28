@@ -1,5 +1,5 @@
 {
-  "name": "@intechnity/react-native-thermal-printer",
+  "name": "@impelsys/react-native-thermal-printer",
   "version": "0.1.0",
   "description": "A React Native Library to support USB/BLE/Net printer.",
   "main": "dist/index.js",
@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Intechnity-com/react-native-thermal-printer.git"
+    "url": "https://github.com/impelsystems/react-native-thermal-printer.git"
   },
   "files": [
     "dist",
@@ -53,6 +53,6 @@
     "react-native": "*"
   },
   "author": "intechnity",
-  "homepage": "https://github.com/Intechnity-com/react-native-thermal-printer#readme",
+  "homepage": "https://github.com/impelsystems/react-native-thermal-printer#readme",
   "license": "ISC"
 }
