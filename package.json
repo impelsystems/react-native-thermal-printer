@@ -1,5 +1,5 @@
 {
-  "name": "@impelsys/react-native-thermal-printer",
+  "name": "react-native-thermal-printer",
   "version": "0.1.0",
   "description": "A React Native Library to support USB/BLE/Net printer.",
   "main": "dist/index.js",
