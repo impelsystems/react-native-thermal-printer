@@ -1,6 +1,5 @@
 package com.pinmi.react.printer.adapter;
 
-import android.os;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
