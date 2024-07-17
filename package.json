@@ -1,6 +1,6 @@
 {
   "name": "react-native-thermal-printer",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "description": "A React Native Library to support USB/BLE/Net printer.",
   "main": "dist/index.js",
   "source": "dist/index.js",
@@ -43,7 +43,7 @@
     "@types/react-test-renderer": "^18.0.0",
     "pod-install": "^0.1.10",
     "react": "^18.2.0",
-    "react-native": "^0.71.8",
+    "react-native": "^0.74.2",
     "rimraf": "^3.0.2",
     "typescript": "^4.8.4"
   },
