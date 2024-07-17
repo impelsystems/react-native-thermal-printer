@@ -78,7 +78,7 @@ export function processText(text: string, options?: IPrintOptions): Buffer {
 
 function setCodepage(bytes: BufferHelper, options: IPrintOptions) {
   bytes.concat(buf([ESC, b('t')]));
-  bytes.concat(Buffer.from([options.codepage]));
+  bytes.concat(Buffer.from([options.codepage].toString()));
 
   if (options.codepage == 0)
     bytes.concat(buf([FS, b('&')]));
