@@ -99,8 +99,6 @@ public class USBPrinterAdapter implements PrinterAdapter, IUSBPrinterDeviceCallb
                 closeConnectionIfExists();
                 var intent = new Intent(ACTION_USB_PERMISSION);
                 intent.setPackage(mContext.getPackageName());
-                intent.putExtra("tester", "Testing One");
-//                intent.putExtra("mydevice", mUsbDevice.toString());
                 var permissionIntent = PendingIntent.getBroadcast(mContext, 0, intent, PendingIntent.FLAG_MUTABLE);
                 mUSBManager.requestPermission(mUsbDevice, permissionIntent);
             }
@@ -120,8 +118,6 @@ public class USBPrinterAdapter implements PrinterAdapter, IUSBPrinterDeviceCallb
                 closeConnectionIfExists();
                 var intent = new Intent(ACTION_USB_PERMISSION);
                 intent.setPackage(mContext.getPackageName());
-                intent.putExtra("tester", "Testing Two");
-                //    intent.putExtra("mydevice", usbDevice);
                 var permissionIntent = PendingIntent.getBroadcast(mContext, 0, intent, PendingIntent.FLAG_MUTABLE);
                 mUSBManager.requestPermission(usbDevice, permissionIntent);
                 successCallback.invoke(new USBPrinterDevice(usbDevice).toRNWritableMap());
@@ -135,7 +131,7 @@ public class USBPrinterAdapter implements PrinterAdapter, IUSBPrinterDeviceCallb
 
     private boolean openConnection() {
         if (mUsbDevice == null) {
-            Log.e(LOG_TAG, "USB Deivce is not initialized");
+            Log.e(LOG_TAG, "USB Device is not initialized");
             return false;
         }
         if (mUSBManager == null) {
