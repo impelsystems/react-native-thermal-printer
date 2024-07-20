@@ -15,6 +15,8 @@ import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.core.content.ContextCompat;
+
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
@@ -25,210 +27,197 @@ import java.util.List;
 /**
  * Created by xiesubin on 2017/9/20.
  */
-public class USBPrinterAdapter implements PrinterAdapter {
-    private static USBPrinterAdapter mInstance;
+public class USBPrinterAdapter implements PrinterAdapter, IUSBPrinterDeviceCallback {
+  private static USBPrinterAdapter mInstance;
 
-    private String LOG_TAG = "RNUSBPrinter";
-    private Context mContext;
-    private UsbManager mUSBManager;
-    private PendingIntent mPermissionIndent;
-    private UsbDevice mUsbDevice;
-    private UsbDeviceConnection mUsbDeviceConnection;
-    private UsbInterface mUsbInterface;
-    private UsbEndpoint mEndPoint;
-    private static final String ACTION_USB_PERMISSION = "com.pinmi.react.USBPrinter.USB_PERMISSION";
-    private static final String EVENT_USB_DEVICE_ATTACHED = "usbAttached";
+  private String LOG_TAG = "RNUSBPrinter";
+  private Context mContext;
+  private UsbManager mUSBManager;
+  private UsbDevice mUsbDevice;
+  private UsbDeviceConnection mUsbDeviceConnection;
+  private UsbInterface mUsbInterface;
+  private UsbEndpoint mEndPoint;
+  private USBPrinterBroadcastReceiver mUsbDeviceReceiver;
+  private static final String ACTION_USB_PERMISSION = "com.pinmi.react.USBPrinter.USB_PERMISSION";
+  private static final String EVENT_USB_DEVICE_ATTACHED = "usbAttached";
 
-    private USBPrinterAdapter() {
+  private USBPrinterAdapter() {
+  }
+
+  public static USBPrinterAdapter getInstance() {
+    if (mInstance == null) {
+      mInstance = new USBPrinterAdapter();
+    }
+    return mInstance;
+  }
+
+  public void init(ReactApplicationContext reactContext, Callback successCallback, Callback errorCallback) {
+    this.mContext = reactContext;
+    this.mUSBManager = (UsbManager) this.mContext.getSystemService(Context.USB_SERVICE);
+    this.mUsbDeviceReceiver = new USBPrinterBroadcastReceiver(reactContext, this);
+    var filter = mUsbDeviceReceiver.createIntentFilter();
+    ContextCompat.registerReceiver(mContext, mUsbDeviceReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
+    Log.v(LOG_TAG, "RNUSBPrinter initialized");
+    successCallback.invoke();
+  }
+
+  public void closeConnectionIfExists() {
+    if (mUsbDeviceConnection != null) {
+      mUsbDeviceConnection.releaseInterface(mUsbInterface);
+      mUsbDeviceConnection.close();
+      mUsbInterface = null;
+      mEndPoint = null;
+      mUsbDeviceConnection = null;
+    }
+  }
+
+  public List<PrinterDevice> getDeviceList(Callback errorCallback) {
+    List<PrinterDevice> lists = new ArrayList<>();
+    if (mUSBManager == null) {
+      errorCallback.invoke("USBManager is not initialized while get device list");
+      return lists;
     }
 
-    public static USBPrinterAdapter getInstance() {
-        if (mInstance == null) {
-            mInstance = new USBPrinterAdapter();
-        }
-        return mInstance;
+    for (UsbDevice usbDevice : mUSBManager.getDeviceList().values()) {
+      lists.add(new USBPrinterDevice(usbDevice));
+    }
+    return lists;
+  }
+
+  @Override
+  public void selectDevice(PrinterDeviceId printerDeviceId, Callback successCallback, Callback errorCallback) {
+    if (mUSBManager == null) {
+      errorCallback.invoke("USBManager is not initialized before select device");
+      return;
     }
 
-    private final BroadcastReceiver mUsbDeviceReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (ACTION_USB_PERMISSION.equals(action)) {
-                synchronized (this) {
-                    UsbDevice usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice.class);
-                    if (usbDevice == null) {
-                        Log.i(LOG_TAG,
-                                "Unable to retrieve device to check if permission was granted.");
-                        Toast.makeText(context,
-                                "Failed determining result.",
-                                Toast.LENGTH_LONG).show();
-                        return;
-                    }
-                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                        Log.i(LOG_TAG,
-                                "Success to grant permission for device " + usbDevice.getDeviceId() + ", vendorId: "
-                                        + usbDevice.getVendorId() + " productId: " + usbDevice.getProductId());
-                        mUsbDevice = usbDevice;
-                        return;
-                    }
-                    Toast.makeText(context,
-                            "User refuses to obtain USB device permissions" + usbDevice.getDeviceName(),
-                            Toast.LENGTH_LONG).show();
-                }
-            } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-                if (mUsbDevice != null) {
-                    Toast.makeText(context, "USB device has been turned off", Toast.LENGTH_LONG).show();
-                    closeConnectionIfExists();
-                }
-            } else if (UsbManager.ACTION_USB_ACCESSORY_ATTACHED.equals(action)
-                    || UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
-                synchronized (this) {
-                    if (mContext != null) {
-                        ((ReactApplicationContext) mContext)
-                                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                                .emit(EVENT_USB_DEVICE_ATTACHED, null);
-                    }
-                }
-            }
-        }
-    };
-
-    public void init(ReactApplicationContext reactContext, Callback successCallback, Callback errorCallback) {
-        this.mContext = reactContext;
-        this.mUSBManager = (UsbManager) this.mContext.getSystemService(Context.USB_SERVICE);
-        this.mPermissionIndent = PendingIntent.getBroadcast(mContext, 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-        IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-        filter.addAction(UsbManager.ACTION_USB_ACCESSORY_ATTACHED);
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-        mContext.registerReceiver(mUsbDeviceReceiver, filter, Context.RECEIVER_EXPORTED);
-        Log.v(LOG_TAG, "RNUSBPrinter initialized");
-        successCallback.invoke();
-    }
-
-    public void closeConnectionIfExists() {
-        if (mUsbDeviceConnection != null) {
-            mUsbDeviceConnection.releaseInterface(mUsbInterface);
-            mUsbDeviceConnection.close();
-            mUsbInterface = null;
-            mEndPoint = null;
-            mUsbDeviceConnection = null;
-        }
-    }
-
-    public List<PrinterDevice> getDeviceList(Callback errorCallback) {
-        List<PrinterDevice> lists = new ArrayList<>();
-        if (mUSBManager == null) {
-            errorCallback.invoke("USBManager is not initialized while get device list");
-            return lists;
-        }
-
-        for (UsbDevice usbDevice : mUSBManager.getDeviceList().values()) {
-            lists.add(new USBPrinterDevice(usbDevice));
-        }
-        return lists;
-    }
-
-    @Override
-    public void selectDevice(PrinterDeviceId printerDeviceId, Callback successCallback, Callback errorCallback) {
-        if (mUSBManager == null) {
-            errorCallback.invoke("USBManager is not initialized before select device");
-            return;
-        }
-
-        USBPrinterDeviceId usbPrinterDeviceId = (USBPrinterDeviceId) printerDeviceId;
-        if (mUsbDevice != null && mUsbDevice.getVendorId() == usbPrinterDeviceId.getVendorId()
-                && mUsbDevice.getProductId() == usbPrinterDeviceId.getProductId()) {
-            Log.i(LOG_TAG, "already selected device, do not need repeat to connect");
-            if (!mUSBManager.hasPermission(mUsbDevice)) {
-                closeConnectionIfExists();
-                mUSBManager.requestPermission(mUsbDevice, mPermissionIndent);
-            }
-            successCallback.invoke(new USBPrinterDevice(mUsbDevice).toRNWritableMap());
-            return;
-        }
+    USBPrinterDeviceId usbPrinterDeviceId = (USBPrinterDeviceId) printerDeviceId;
+    if (mUsbDevice != null && mUsbDevice.getVendorId() == usbPrinterDeviceId.getVendorId()
+      && mUsbDevice.getProductId() == usbPrinterDeviceId.getProductId()) {
+      Log.i(LOG_TAG, "already selected device, do not need repeat to connect");
+      if (!mUSBManager.hasPermission(mUsbDevice)) {
         closeConnectionIfExists();
-        if (mUSBManager.getDeviceList().size() == 0) {
-            errorCallback.invoke("Device list is empty, can not choose device");
-            return;
-        }
-        for (UsbDevice usbDevice : mUSBManager.getDeviceList().values()) {
-            if (usbDevice.getVendorId() == usbPrinterDeviceId.getVendorId()
-                    && usbDevice.getProductId() == usbPrinterDeviceId.getProductId()) {
-                Log.v(LOG_TAG, "request for device: vendorId: " + usbPrinterDeviceId.getVendorId() + ", productId: "
-                        + usbPrinterDeviceId.getProductId());
-                closeConnectionIfExists();
-                mUSBManager.requestPermission(usbDevice, mPermissionIndent);
-                successCallback.invoke(new USBPrinterDevice(usbDevice).toRNWritableMap());
-                return;
-            }
-        }
-
-        errorCallback.invoke("can not find specified device");
+        var intent = new Intent(ACTION_USB_PERMISSION);
+        intent.setPackage(mContext.getPackageName());
+        intent.putExtra("tester", "Testing One");
+//                intent.putExtra("mydevice", mUsbDevice.toString());
+        var permissionIntent = PendingIntent.getBroadcast(mContext, 0, intent, PendingIntent.FLAG_MUTABLE);
+        mUSBManager.requestPermission(mUsbDevice, permissionIntent);
+      }
+      successCallback.invoke(new USBPrinterDevice(mUsbDevice).toRNWritableMap());
+      return;
+    }
+    closeConnectionIfExists();
+    if (mUSBManager.getDeviceList().size() == 0) {
+      errorCallback.invoke("Device list is empty, can not choose device");
+      return;
+    }
+    for (UsbDevice usbDevice : mUSBManager.getDeviceList().values()) {
+      if (usbDevice.getVendorId() == usbPrinterDeviceId.getVendorId()
+        && usbDevice.getProductId() == usbPrinterDeviceId.getProductId()) {
+        Log.v(LOG_TAG, "request for device: vendorId: " + usbPrinterDeviceId.getVendorId() + ", productId: "
+          + usbPrinterDeviceId.getProductId());
+        closeConnectionIfExists();
+        var intent = new Intent(ACTION_USB_PERMISSION);
+        intent.setPackage(mContext.getPackageName());
+        intent.putExtra("tester", "Testing Two");
+        //    intent.putExtra("mydevice", usbDevice);
+        var permissionIntent = PendingIntent.getBroadcast(mContext, 0, intent, PendingIntent.FLAG_MUTABLE);
+        mUSBManager.requestPermission(usbDevice, permissionIntent);
+        successCallback.invoke(new USBPrinterDevice(usbDevice).toRNWritableMap());
         return;
+      }
     }
 
-    private boolean openConnection() {
-        if (mUsbDevice == null) {
-            Log.e(LOG_TAG, "USB Deivce is not initialized");
-            return false;
-        }
-        if (mUSBManager == null) {
-            Log.e(LOG_TAG, "USB Manager is not initialized");
-            return false;
-        }
+    errorCallback.invoke("can not find specified device");
+    return;
+  }
 
-        if (mUsbDeviceConnection != null) {
-            Log.i(LOG_TAG, "USB Connection already connected");
+  private boolean openConnection() {
+    if (mUsbDevice == null) {
+      Log.e(LOG_TAG, "USB Deivce is not initialized");
+      return false;
+    }
+    if (mUSBManager == null) {
+      Log.e(LOG_TAG, "USB Manager is not initialized");
+      return false;
+    }
+
+    if (mUsbDeviceConnection != null) {
+      Log.i(LOG_TAG, "USB Connection already connected");
+      return true;
+    }
+
+    UsbInterface usbInterface = mUsbDevice.getInterface(0);
+    for (int i = 0; i < usbInterface.getEndpointCount(); i++) {
+      final UsbEndpoint ep = usbInterface.getEndpoint(i);
+      if (ep.getType() == UsbConstants.USB_ENDPOINT_XFER_BULK) {
+        if (ep.getDirection() == UsbConstants.USB_DIR_OUT) {
+          UsbDeviceConnection usbDeviceConnection = mUSBManager.openDevice(mUsbDevice);
+          if (usbDeviceConnection == null) {
+            Log.e(LOG_TAG, "failed to open USB Connection");
+            return false;
+          }
+          if (usbDeviceConnection.claimInterface(usbInterface, true)) {
+
+            mEndPoint = ep;
+            mUsbInterface = usbInterface;
+            mUsbDeviceConnection = usbDeviceConnection;
+            Log.i(LOG_TAG, "Device connected");
             return true;
+          } else {
+            usbDeviceConnection.close();
+            Log.e(LOG_TAG, "failed to claim usb connection");
+            return false;
+          }
         }
-
-        UsbInterface usbInterface = mUsbDevice.getInterface(0);
-        for (int i = 0; i < usbInterface.getEndpointCount(); i++) {
-            final UsbEndpoint ep = usbInterface.getEndpoint(i);
-            if (ep.getType() == UsbConstants.USB_ENDPOINT_XFER_BULK) {
-                if (ep.getDirection() == UsbConstants.USB_DIR_OUT) {
-                    UsbDeviceConnection usbDeviceConnection = mUSBManager.openDevice(mUsbDevice);
-                    if (usbDeviceConnection == null) {
-                        Log.e(LOG_TAG, "failed to open USB Connection");
-                        return false;
-                    }
-                    if (usbDeviceConnection.claimInterface(usbInterface, true)) {
-
-                        mEndPoint = ep;
-                        mUsbInterface = usbInterface;
-                        mUsbDeviceConnection = usbDeviceConnection;
-                        Log.i(LOG_TAG, "Device connected");
-                        return true;
-                    } else {
-                        usbDeviceConnection.close();
-                        Log.e(LOG_TAG, "failed to claim usb connection");
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
+      }
     }
+    return true;
+  }
 
-    public void printRawData(String data, Callback errorCallback) {
-        final String rawData = data;
-        Log.v(LOG_TAG, "start to print raw data " + data);
-        boolean isConnected = openConnection();
-        if (isConnected) {
-            Log.v(LOG_TAG, "Connected to device");
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    byte[] bytes = Base64.decode(rawData, Base64.DEFAULT);
-                    int b = mUsbDeviceConnection.bulkTransfer(mEndPoint, bytes, bytes.length, 100000);
-                    Log.i(LOG_TAG, "Return Status: b-->" + b);
-                }
-            }).start();
-        } else {
-            String msg = "failed to connected to device";
-            Log.v(LOG_TAG, msg);
-            errorCallback.invoke(msg);
+  public void printRawData(String data, Callback errorCallback) {
+    final String rawData = data;
+    Log.v(LOG_TAG, "start to print raw data " + data);
+    boolean isConnected = openConnection();
+    if (isConnected) {
+      Log.v(LOG_TAG, "Connected to device");
+      new Thread(new Runnable() {
+        @Override
+        public void run() {
+          byte[] bytes = Base64.decode(rawData, Base64.DEFAULT);
+          int b = mUsbDeviceConnection.bulkTransfer(mEndPoint, bytes, bytes.length, 100000);
+          Log.i(LOG_TAG, "Return Status: b-->" + b);
         }
+      }).start();
+    } else {
+      String msg = "failed to connected to device";
+      Log.v(LOG_TAG, msg);
+      errorCallback.invoke(msg);
     }
+  }
+
+  @Override
+  public void onUsbDeviceAttached() {
+    synchronized (this) {
+      if (mContext != null) {
+        ((ReactApplicationContext) mContext)
+          .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+          .emit(EVENT_USB_DEVICE_ATTACHED, null);
+      }
+    }
+  }
+
+  @Override
+  public void onUsbDeviceDetached() {
+    if (mUsbDevice != null) {
+      Toast.makeText(mContext, "USB device has been turned off", Toast.LENGTH_LONG).show();
+      closeConnectionIfExists();
+    }
+  }
+
+  @Override
+  public void onUsbDeviceSelected(UsbDevice device) {
+    mUsbDevice = device;
+  }
 }
