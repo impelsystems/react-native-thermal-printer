@@ -112,7 +112,7 @@ public class USBPrinterAdapter implements PrinterAdapter, IUSBPrinterDeviceCallb
         for (UsbDevice usbDevice : mUSBManager.getDeviceList().values()) {
             if (usbPrinterDeviceId.equals(usbDevice)) {
                 Log.v(LOG_TAG, "request for device: vendorId: " + usbPrinterDeviceId.getVendorId() + ", productId: "
-                        + usbPrinterDeviceId.getProductId());
+                        + usbPrinterDeviceId.getProductId() + ", deviceName: " + usbPrinterDeviceId.getDeviceName());
                 closeConnectionIfExists();
                 var intent = new Intent(ACTION_USB_PERMISSION);
                 intent.setPackage(mContext.getPackageName());

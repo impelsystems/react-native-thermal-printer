@@ -52,7 +52,7 @@ public class USBPrinterBroadcastReceiver extends BroadcastReceiver {
                 if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
                     Log.i(LOG_TAG,
                             "Success to grant permission for device " + usbDevice.getDeviceId() + ", vendorId: "
-                                    + usbDevice.getVendorId() + " productId: " + usbDevice.getProductId());
+                                    + usbDevice.getVendorId() + " productId: " + usbDevice.getProductId() + " deviceName: " + usbDevice.getDeviceName());
                     mCallback.onUsbDeviceSelected(usbDevice);
                     return;
                 }
