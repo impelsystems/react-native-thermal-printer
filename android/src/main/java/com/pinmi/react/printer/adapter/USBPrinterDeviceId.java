@@ -1,12 +1,13 @@
 package com.pinmi.react.printer.adapter;
 
 import android.hardware.usb.UsbDevice;
+import android.util.Log;
 
 /**
  * Created by xiesubin on 2017/9/21.
  */
 public class USBPrinterDeviceId extends PrinterDeviceId {
-    private String LOG_TAG = "RNUSBPrinter";
+    private final String LOG_TAG = "RNUSBPrinter";
 
     private Integer vendorId;
     private Integer productId;
