@@ -1,5 +1,7 @@
 package com.pinmi.react.printer.adapter;
 
+import android.hardware.usb.UsbDevice;
+
 /**
  * Created by xiesubin on 2017/9/21.
  */
@@ -48,6 +50,12 @@ public class USBPrinterDeviceId extends PrinterDeviceId {
         int result = vendorId.hashCode();
         result = 31 * result + productId.hashCode();
         return result;
+    }
+
+    public boolean matchesDevice(UsbDevice device) {
+      return device.getVendorId() == this.getVendorId()
+        && device.getProductId() == this.getProductId()
+        && device.getDeviceName() == this.getDeviceName();
     }
 
     private USBPrinterDeviceId(Integer vendorId, Integer productId, String deviceName) {
