@@ -6,6 +6,7 @@ import android.hardware.usb.UsbDevice;
  * Created by xiesubin on 2017/9/21.
  */
 public class USBPrinterDeviceId extends PrinterDeviceId {
+    private String LOG_TAG = "RNUSBPrinter";
 
     private Integer vendorId;
     private Integer productId;
@@ -52,7 +53,13 @@ public class USBPrinterDeviceId extends PrinterDeviceId {
         return result;
     }
 
+    public String asDeviceString() {
+      return this.getVendorId() + ":" + this.getProductId() + ":" + this.getDeviceName();
+    }
+
     public boolean matchesDevice(UsbDevice device) {
+      Log.i(LOG_TAG, "checking matchesDevice for this: " + this.asDeviceString() + ", matching to: " + device.getVendorId() +":" + device.getProductId() +":" + device.getDeviceName());
+
       return device.getVendorId() == this.getVendorId()
         && device.getProductId() == this.getProductId()
         && device.getDeviceName() == this.getDeviceName();

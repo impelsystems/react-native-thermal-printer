@@ -92,6 +92,9 @@ public class USBPrinterAdapter implements PrinterAdapter, IUSBPrinterDeviceCallb
         }
 
         USBPrinterDeviceId usbPrinterDeviceId = (USBPrinterDeviceId) printerDeviceId;
+
+        Log.i(LOG_TAG, "selecting device requested for: " + usbPrinterDeviceId.asDeviceString());
+
         if (mUsbDevice != null && usbPrinterDeviceId.matchesDevice(mUsbDevice)) {
             Log.i(LOG_TAG, "already selected device, do not need repeat to connect");
             if (!mUSBManager.hasPermission(mUsbDevice)) {
@@ -111,8 +114,7 @@ public class USBPrinterAdapter implements PrinterAdapter, IUSBPrinterDeviceCallb
         }
         for (UsbDevice usbDevice : mUSBManager.getDeviceList().values()) {
             if (usbPrinterDeviceId.matchesDevice(usbDevice)) {
-                Log.v(LOG_TAG, "request for device: vendorId: " + usbPrinterDeviceId.getVendorId() + ", productId: "
-                        + usbPrinterDeviceId.getProductId() + ", deviceName: " + usbPrinterDeviceId.getDeviceName());
+                Log.v(LOG_TAG, "request for device: vendorId: " + usbPrinterDeviceId.asDeviceString());
                 closeConnectionIfExists();
                 var intent = new Intent(ACTION_USB_PERMISSION);
                 intent.setPackage(mContext.getPackageName());
