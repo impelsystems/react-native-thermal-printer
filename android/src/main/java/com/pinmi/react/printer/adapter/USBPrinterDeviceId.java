@@ -61,9 +61,13 @@ public class USBPrinterDeviceId extends PrinterDeviceId {
     public boolean matchesDevice(UsbDevice device) {
       Log.i(LOG_TAG, "checking matchesDevice for this: " + this.asDeviceString() + ", matching to: " + device.getVendorId() +":" + device.getProductId() +":" + device.getDeviceName());
 
-      return device.getVendorId() == this.getVendorId()
+      boolean result = device.getVendorId() == this.getVendorId()
         && device.getProductId() == this.getProductId()
-        && device.getDeviceName() == this.getDeviceName();
+        && device.getDeviceName().equals(this.getDeviceName());
+
+      Log.i(LOG_TAG, "check match result is: " + result);
+
+      return result;
     }
 
     private USBPrinterDeviceId(Integer vendorId, Integer productId, String deviceName) {
