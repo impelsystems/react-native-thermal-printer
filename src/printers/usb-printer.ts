@@ -9,11 +9,12 @@ export class USBPrinterWrapper extends BasePrinter<IUSBPrinterIdentity> {
     super(RNUSBPrinter);
   }
 
-  connectPrinter = (vendorId: string, productId: string): Promise<IUSBPrinterIdentity> =>
+  connectPrinter = (vendorId: string, productId: string, deviceName: string): Promise<IUSBPrinterIdentity> =>
     new Promise((resolve, reject) =>
       this.module.connectPrinter(
         vendorId,
         productId,
+        deviceName,
         (printer: IUSBPrinterIdentity) => resolve(printer),
         (error: Error) => reject(error)
       )
