@@ -40,7 +40,7 @@ public class NetPrinterAdapter implements PrinterAdapter {
 
     private Socket mSocket;
 
-    private boolean isRunning = false;
+    private boolean mScanning = false;
 
     private NetPrinterAdapter() {
     }
@@ -67,15 +67,15 @@ public class NetPrinterAdapter implements PrinterAdapter {
     }
 
     private void scan() {
-        if (isRunning)
+        if (mScanning)
             return;
 
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    isRunning = true;
-                    emitEvent(EVENT_SCANNER_RUNNING, isRunning);
+                    mScanning = true;
+                    emitEvent(EVENT_SCANNER_RUNNING, mScanning);
 
                     WifiManager wifiManager = (WifiManager) mContext.getApplicationContext()
                             .getSystemService(Context.WIFI_SERVICE);
@@ -108,48 +108,17 @@ public class NetPrinterAdapter implements PrinterAdapter {
                 } catch (NullPointerException ex) {
                     Log.i(LOG_TAG, "No connection");
                 } finally {
-                    isRunning = false;
-                    emitEvent(EVENT_SCANNER_RUNNING, isRunning);
+                    mScanning = false;
+                    emitEvent(EVENT_SCANNER_RUNNING, mScanning);
                 }
             }
         }).start();
-    }
-
-    private ReadableArray convertObjectToReadableArray(Object object) {
-      if (object instanceof ReadableArray) {
-        ReadableArray readableArray = (ReadableArray) object;
-
-        for (int i = 0; i < readableArray.size(); i++) {
-          if (!(readableArray.getMap(i) instanceof ReadableMap)) {
-            throw new IllegalArgumentException("Array element is not a ReadableMap");
-          }
-        }
-
-        return readableArray;
-      } else {
-        throw new IllegalArgumentException("Object is not a ReadableArray");
-      }
     }
 
     private void emitEvent(String eventName, Object data) {
         if (mContext != null) {
             mContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class).emit(eventName, data);
         }
-
-//        if (eventName == EVENT_SCANNER_RESOLVED) {
-//          try {
-//            mPrinterDevices.clear();
-//            ReadableArray printers = this.convertObjectToReadableArray(data);
-//            if (printers.size() == 0) {
-//              return;
-//            }
-//            for (int i = 0; i < printers.size(); i++) {
-//              ReadableMap map = printers.getMap(i);
-//            }
-//          } catch (Exception error) {
-//            Log.e(LOG_TAG, error.getMessage());
-//          }
-//        }
     }
 
     private ArrayList<Integer> getAvailablePorts(String address) {
