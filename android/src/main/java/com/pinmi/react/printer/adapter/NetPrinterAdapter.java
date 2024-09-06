@@ -27,7 +27,7 @@ import java.util.List;
 public class NetPrinterAdapter implements PrinterAdapter {
     private static NetPrinterAdapter mInstance;
     private ReactApplicationContext mContext;
-    private String LOG_TAG = "RNNetPrinter";
+    private static String LOG_TAG = "RNNetPrinter";
     private NetPrinterDevice mNetDevice;
     private List<PrinterDevice> mPrinterDevices = new ArrayList<>();
 
