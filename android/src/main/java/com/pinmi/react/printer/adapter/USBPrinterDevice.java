@@ -13,7 +13,12 @@ public class USBPrinterDevice implements PrinterDevice {
     private USBPrinterDeviceId usbPrinterDeviceId;
 
     public USBPrinterDevice(UsbDevice device) {
-        this.usbPrinterDeviceId = USBPrinterDeviceId.valueOf(device.getVendorId(), device.getProductId(), device.getDeviceName(), device.getSerialNumber());
+        this.usbPrinterDeviceId = USBPrinterDeviceId.valueOf(
+          device.getVendorId(),
+          device.getProductId(),
+          device.getDeviceName(),
+          this.tryGetDeviceSerialNumber(device)
+        );
         this.mDevice = device;
     }
 
@@ -33,6 +38,16 @@ public class USBPrinterDevice implements PrinterDevice {
         deviceMap.putInt("device_id", this.mDevice.getDeviceId());
         deviceMap.putInt("vendorId", this.mDevice.getVendorId());
         deviceMap.putInt("productId", this.mDevice.getProductId());
+        deviceMap.putString("serialNumber", this.tryGetDeviceSerialNumber(this.mDevice));
         return deviceMap;
     }
+
+  private String tryGetDeviceSerialNumber(UsbDevice device) {
+    try {
+      return device.getSerialNumber();
+    } catch (Exception error) {
+      // you'll do nothing
+    }
+    return null;
+  }
 }
