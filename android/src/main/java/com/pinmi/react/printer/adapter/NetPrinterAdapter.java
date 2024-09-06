@@ -8,6 +8,8 @@ import android.util.Log;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
@@ -27,6 +29,7 @@ public class NetPrinterAdapter implements PrinterAdapter {
     private ReactApplicationContext mContext;
     private String LOG_TAG = "RNNetPrinter";
     private NetPrinterDevice mNetDevice;
+    private List<PrinterDevice> mPrinterDevices = new ArrayList<>();
 
     // TODO- support other ports later
     // private int[] PRINTER_ON_PORTS = {515, 3396, 9100, 9303};
@@ -45,7 +48,6 @@ public class NetPrinterAdapter implements PrinterAdapter {
     public static NetPrinterAdapter getInstance() {
         if (mInstance == null) {
             mInstance = new NetPrinterAdapter();
-
         }
         return mInstance;
     }
@@ -54,13 +56,14 @@ public class NetPrinterAdapter implements PrinterAdapter {
     public void init(ReactApplicationContext reactContext, Callback successCallback, Callback errorCallback) {
         this.mContext = reactContext;
         successCallback.invoke();
+        this.scan();
     }
 
     @Override
     public List<PrinterDevice> getDeviceList(Callback errorCallback) {
         this.scan();
-        List<PrinterDevice> printerDevices = new ArrayList<>();
-        return printerDevices;
+        //List<PrinterDevice> printerDevices = new ArrayList<>();
+        return mPrinterDevices;
     }
 
     private void scan() {
@@ -78,6 +81,7 @@ public class NetPrinterAdapter implements PrinterAdapter {
                             .getSystemService(Context.WIFI_SERVICE);
                     String ipAddress = ipToString(wifiManager.getConnectionInfo().getIpAddress());
                     WritableArray array = Arguments.createArray();
+                    mPrinterDevices.clear();
 
                     String prefix = ipAddress.substring(0, ipAddress.lastIndexOf('.') + 1);
                     int suffix = Integer
@@ -94,6 +98,7 @@ public class NetPrinterAdapter implements PrinterAdapter {
                             payload.putString("host", prefix + i);
                             payload.putInt("port", 9100);
 
+                            mPrinterDevices.add(new NetPrinterDevice(prefix + i, 9100));
                             array.pushMap(payload);
                         }
                     }
@@ -110,10 +115,41 @@ public class NetPrinterAdapter implements PrinterAdapter {
         }).start();
     }
 
+    private ReadableArray convertObjectToReadableArray(Object object) {
+      if (object instanceof ReadableArray) {
+        ReadableArray readableArray = (ReadableArray) object;
+
+        for (int i = 0; i < readableArray.size(); i++) {
+          if (!(readableArray.getMap(i) instanceof ReadableMap)) {
+            throw new IllegalArgumentException("Array element is not a ReadableMap");
+          }
+        }
+
+        return readableArray;
+      } else {
+        throw new IllegalArgumentException("Object is not a ReadableArray");
+      }
+    }
+
     private void emitEvent(String eventName, Object data) {
         if (mContext != null) {
             mContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class).emit(eventName, data);
         }
+
+//        if (eventName == EVENT_SCANNER_RESOLVED) {
+//          try {
+//            mPrinterDevices.clear();
+//            ReadableArray printers = this.convertObjectToReadableArray(data);
+//            if (printers.size() == 0) {
+//              return;
+//            }
+//            for (int i = 0; i < printers.size(); i++) {
+//              ReadableMap map = printers.getMap(i);
+//            }
+//          } catch (Exception error) {
+//            Log.e(LOG_TAG, error.getMessage());
+//          }
+//        }
     }
 
     private ArrayList<Integer> getAvailablePorts(String address) {
@@ -132,6 +168,7 @@ public class NetPrinterAdapter implements PrinterAdapter {
                 // Connects this socket to the server with a specified timeout value.
                 crunchifySocket.connect(new InetSocketAddress(address, port), 100);
             }
+            Log.i(LOG_TAG, "Successful connection to " + address + ":" + port);
             // Return true if connection successful
             return true;
         } catch (IOException exception) {

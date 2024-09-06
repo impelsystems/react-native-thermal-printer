@@ -1,13 +1,17 @@
 package com.pinmi.react.printer;
 
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
-import com.pinmi.react.printer.adapter.BLEPrinterDeviceId;
+import com.facebook.react.bridge.WritableArray;
 import com.pinmi.react.printer.adapter.NetPrinterAdapter;
 import com.pinmi.react.printer.adapter.NetPrinterDeviceId;
 import com.pinmi.react.printer.adapter.PrinterAdapter;
+import com.pinmi.react.printer.adapter.PrinterDevice;
+
+import java.util.List;
 
 /**
  * Created by xiesubin on 2017/9/22.
@@ -40,8 +44,16 @@ public class RNNetPrinterModule extends ReactContextBaseJavaModule implements RN
     @Override
     public void getDeviceList(Callback successCallback, Callback errorCallback) {
         try {
-            this.adapter.getDeviceList(errorCallback);
-            successCallback.invoke();
+            List< PrinterDevice> printerDevices = this.adapter.getDeviceList(errorCallback);
+            WritableArray pairedDeviceList = Arguments.createArray();
+            if (printerDevices.size() > 0) {
+              for (PrinterDevice printerDevice : printerDevices) {
+                pairedDeviceList.pushMap(printerDevice.toRNWritableMap());
+              }
+              successCallback.invoke(pairedDeviceList);
+            } else {
+              errorCallback.invoke("No Device Found");
+            }
         } catch (Exception ex) {
             errorCallback.invoke(ex.getMessage());
         }
