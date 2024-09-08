@@ -8,6 +8,8 @@ import android.util.Log;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
@@ -25,8 +27,9 @@ import java.util.List;
 public class NetPrinterAdapter implements PrinterAdapter {
     private static NetPrinterAdapter mInstance;
     private ReactApplicationContext mContext;
-    private String LOG_TAG = "RNNetPrinter";
+    private static String LOG_TAG = "RNNetPrinter";
     private NetPrinterDevice mNetDevice;
+    private List<PrinterDevice> mPrinterDevices = new ArrayList<>();
 
     // TODO- support other ports later
     // private int[] PRINTER_ON_PORTS = {515, 3396, 9100, 9303};
@@ -37,7 +40,7 @@ public class NetPrinterAdapter implements PrinterAdapter {
 
     private Socket mSocket;
 
-    private boolean isRunning = false;
+    private boolean mScanning = false;
 
     private NetPrinterAdapter() {
     }
@@ -45,7 +48,6 @@ public class NetPrinterAdapter implements PrinterAdapter {
     public static NetPrinterAdapter getInstance() {
         if (mInstance == null) {
             mInstance = new NetPrinterAdapter();
-
         }
         return mInstance;
     }
@@ -54,30 +56,32 @@ public class NetPrinterAdapter implements PrinterAdapter {
     public void init(ReactApplicationContext reactContext, Callback successCallback, Callback errorCallback) {
         this.mContext = reactContext;
         successCallback.invoke();
+        this.scan();
     }
 
     @Override
     public List<PrinterDevice> getDeviceList(Callback errorCallback) {
         this.scan();
-        List<PrinterDevice> printerDevices = new ArrayList<>();
-        return printerDevices;
+        //List<PrinterDevice> printerDevices = new ArrayList<>();
+        return mPrinterDevices;
     }
 
     private void scan() {
-        if (isRunning)
+        if (mScanning)
             return;
 
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    isRunning = true;
-                    emitEvent(EVENT_SCANNER_RUNNING, isRunning);
+                    mScanning = true;
+                    emitEvent(EVENT_SCANNER_RUNNING, mScanning);
 
                     WifiManager wifiManager = (WifiManager) mContext.getApplicationContext()
                             .getSystemService(Context.WIFI_SERVICE);
                     String ipAddress = ipToString(wifiManager.getConnectionInfo().getIpAddress());
                     WritableArray array = Arguments.createArray();
+                    mPrinterDevices.clear();
 
                     String prefix = ipAddress.substring(0, ipAddress.lastIndexOf('.') + 1);
                     int suffix = Integer
@@ -94,6 +98,7 @@ public class NetPrinterAdapter implements PrinterAdapter {
                             payload.putString("host", prefix + i);
                             payload.putInt("port", 9100);
 
+                            mPrinterDevices.add(new NetPrinterDevice(prefix + i, 9100));
                             array.pushMap(payload);
                         }
                     }
@@ -103,8 +108,8 @@ public class NetPrinterAdapter implements PrinterAdapter {
                 } catch (NullPointerException ex) {
                     Log.i(LOG_TAG, "No connection");
                 } finally {
-                    isRunning = false;
-                    emitEvent(EVENT_SCANNER_RUNNING, isRunning);
+                    mScanning = false;
+                    emitEvent(EVENT_SCANNER_RUNNING, mScanning);
                 }
             }
         }).start();
@@ -132,6 +137,7 @@ public class NetPrinterAdapter implements PrinterAdapter {
                 // Connects this socket to the server with a specified timeout value.
                 crunchifySocket.connect(new InetSocketAddress(address, port), 100);
             }
+            Log.i(LOG_TAG, "Successful connection to " + address + ":" + port);
             // Return true if connection successful
             return true;
         } catch (IOException exception) {
