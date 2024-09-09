@@ -146,7 +146,7 @@ RCT_EXPORT_METHOD(getDeviceList
 
 RCT_EXPORT_METHOD(connectPrinter
                   : (NSString *)host withPort
-                  : (NSNumber *)port success
+                  : (nonnull NSNumber *)port success
                   : (RCTResponseSenderBlock)successCallback fail
                   : (RCTResponseSenderBlock)errorCallback) {
   @try {
@@ -169,14 +169,14 @@ RCT_EXPORT_METHOD(connectPrinter
 
 RCT_EXPORT_METHOD(printRawData
                   : (NSString *)text printerOptions
-                  : (NSDictionary *)options fail
+                  // : (NSDictionary *)options fail
                   : (RCTResponseSenderBlock)errorCallback) {
   @try {
-    NSNumber *beepPtr = [options valueForKey:@"beep"];
-    NSNumber *cutPtr = [options valueForKey:@"cut"];
+    // NSNumber *beepPtr = [options valueForKey:@"beep"];
+    // NSNumber *cutPtr = [options valueForKey:@"cut"];
 
-    BOOL beep = (BOOL)[beepPtr intValue];
-    BOOL cut = (BOOL)[cutPtr intValue];
+    // BOOL beep = (BOOL)[beepPtr intValue];
+    // BOOL cut = (BOOL)[cutPtr intValue];
 
     !connected_ip ? [NSException raise:@"Invalid connection"
                                 format:@"Can't connect to printer"]
@@ -184,8 +184,8 @@ RCT_EXPORT_METHOD(printRawData
 
     // [[PrinterSDK defaultPrinterSDK] printTestPaper];
     [[PrinterSDK defaultPrinterSDK] printText:text];
-    beep ? [[PrinterSDK defaultPrinterSDK] beep] : nil;
-    cut ? [[PrinterSDK defaultPrinterSDK] cutPaper] : nil;
+    // beep ? [[PrinterSDK defaultPrinterSDK] beep] : nil;
+    // cut ? [[PrinterSDK defaultPrinterSDK] cutPaper] : nil;
   } @catch (NSException *exception) {
     errorCallback(@[ exception.reason ]);
   }
