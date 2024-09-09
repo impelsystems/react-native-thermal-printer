@@ -34,8 +34,8 @@ RCT_EXPORT_METHOD(getDeviceList
 RCT_EXPORT_METHOD(connectPrinter
                   : (NSInteger)vendorId withProductID
                   : (NSInteger)productId success
-                  : (NSString)deviceName success
-                  : (NSString)serialNumber success
+                  : (NSString *)deviceName success
+                  : (NSString *)serialNumber success
                   : (RCTResponseSenderBlock)successCallback fail
                   : (RCTResponseSenderBlock)errorCallback) {
   // TODO
