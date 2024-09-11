@@ -8,6 +8,7 @@
 
 #import "RNNetPrinter.h"
 #import "PrinterSDK.h"
+#import "GCDAsyncSocket.h"
 #include <arpa/inet.h>
 #include <ifaddrs.h>
 
@@ -151,12 +152,15 @@ RCT_EXPORT_METHOD(connectPrinter
                   : (RCTResponseSenderBlock)errorCallback) {
   @try {
     NSLog(@"Connecting to printer %@:%@", host, port);
-    BOOL isConnectSuccess = [[PrinterSDK defaultPrinterSDK] connectIP:host];
-    !isConnectSuccess ? [NSException raise:@"Invalid connection"
-                                    format:@"Can't connect to printer %@", host]
-                      : nil;
+    // BOOL isConnectSuccess = [[PrinterSDK defaultPrinterSDK] connectIP:host];
+    // !isConnectSuccess ? [NSException raise:@"Invalid connection"
+    //                                 format:@"Can't connect to printer %@", host]
+    //                   : nil;
 
     NSLog(@"Connected to printer %@", host);
+
+    // connect to the printer
+    [self connectToServerAtAddress:host port:[port intValue]];
 
     connected_ip = host;
 
@@ -191,7 +195,10 @@ RCT_EXPORT_METHOD(printRawData
                   : nil;
 
     // [[PrinterSDK defaultPrinterSDK] printTestPaper];
-    [[PrinterSDK defaultPrinterSDK] printText:text];
+    // [[PrinterSDK defaultPrinterSDK] printText:text];
+
+    // print the data
+    [self sendData:text];
 
 
     NSLog(@"Printed text: %@", text);
@@ -207,11 +214,70 @@ RCT_EXPORT_METHOD(closeConn) {
     !connected_ip ? [NSException raise:@"Invalid connection"
                                 format:@"Can't connect to printer"]
                   : nil;
-    [[PrinterSDK defaultPrinterSDK] disconnect];
+    // [[PrinterSDK defaultPrinterSDK] disconnect];
+
+    // close the connection
+    [asyncSocket disconnect];
+
     connected_ip = nil;
   } @catch (NSException *exception) {
     NSLog(@"%@", exception.reason);
   }
+}
+
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        // Initialize the async socket
+        asyncSocket = [[GCDAsyncSocket alloc] initWithDelegate:self delegateQueue:dispatch_get_main_queue()];
+    }
+    return self;
+}
+
+- (void)connectToServerAtAddress:(NSString *)address port:(uint16_t)port {
+    NSError *error = nil;
+    if (![asyncSocket connectToHost:address onPort:port error:&error]) {
+        NSLog(@"Error connecting: %@", error.localizedDescription);
+    } else {
+        NSLog(@"Connecting to %@:%d...", address, port);
+    }
+}
+
+- (void)sendData:(NSString *)data {
+    NSData *dataToSend = [data dataUsingEncoding:NSUTF8StringEncoding];
+    [asyncSocket writeData:dataToSend withTimeout:-1 tag:0];  // -1 timeout means no timeout
+}
+
+#pragma mark - GCDAsyncSocketDelegate methods
+
+- (void)socket:(GCDAsyncSocket *)sock didConnectToHost:(NSString *)host port:(uint16_t)port {
+    NSLog(@"Connected to %@:%d", host, port);
+    
+    // Start reading data once connected
+    [asyncSocket readDataWithTimeout:-1 tag:0];
+}
+
+- (void)socket:(GCDAsyncSocket *)sock didWriteDataWithTag:(long)tag {
+    NSLog(@"Data sent");
+    
+    // After writing, read the next response from the server
+    [asyncSocket readDataWithTimeout:-1 tag:0];
+}
+
+- (void)socket:(GCDAsyncSocket *)sock didReadData:(NSData *)data withTag:(long)tag {
+    NSString *response = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    NSLog(@"Received data: %@", response);
+    
+    // Keep reading for more data
+    [asyncSocket readDataWithTimeout:-1 tag:0];
+}
+
+- (void)socketDidDisconnect:(GCDAsyncSocket *)sock withError:(NSError *)err {
+    if (err) {
+        NSLog(@"Disconnected with error: %@", err.localizedDescription);
+    } else {
+        NSLog(@"Disconnected");
+    }
 }
 
 @end
