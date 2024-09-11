@@ -150,12 +150,18 @@ RCT_EXPORT_METHOD(connectPrinter
                   : (RCTResponseSenderBlock)successCallback fail
                   : (RCTResponseSenderBlock)errorCallback) {
   @try {
+    NSLog(@"Connecting to printer %@:%@", host, port);
     BOOL isConnectSuccess = [[PrinterSDK defaultPrinterSDK] connectIP:host];
     !isConnectSuccess ? [NSException raise:@"Invalid connection"
                                     format:@"Can't connect to printer %@", host]
                       : nil;
 
+    NSLog(@"Connected to printer %@", host);
+
     connected_ip = host;
+
+    NSLog(@"Connected to printer %@", host, "Set connected_ip to", connected_ip);
+
     [[NSNotificationCenter defaultCenter]
         postNotificationName:@"NetPrinterConnected"
                       object:nil];
@@ -178,12 +184,17 @@ RCT_EXPORT_METHOD(printRawData
     // BOOL beep = (BOOL)[beepPtr intValue];
     // BOOL cut = (BOOL)[cutPtr intValue];
 
+    NSLog(@"Printing text: %@", text, "Connected to printer", connected_ip);
+
     !connected_ip ? [NSException raise:@"Invalid connection"
                                 format:@"Can't connect to printer"]
                   : nil;
 
     // [[PrinterSDK defaultPrinterSDK] printTestPaper];
     [[PrinterSDK defaultPrinterSDK] printText:text];
+
+
+    NSLog(@"Printed text: %@", text);
     // beep ? [[PrinterSDK defaultPrinterSDK] beep] : nil;
     // cut ? [[PrinterSDK defaultPrinterSDK] cutPaper] : nil;
   } @catch (NSException *exception) {
