@@ -7,7 +7,6 @@
 //
 
 #import "RNNetPrinter.h"
-#import "PrinterSDK.h"
 #import "GCDAsyncSocket.h"
 #include <arpa/inet.h>
 #include <ifaddrs.h>
@@ -118,7 +117,7 @@ RCT_EXPORT_METHOD(getDeviceList
         continue;
       NSString *testIP = [NSString stringWithFormat:@"%@.%ld", prefix, (long)i];
       current_scan_ip = testIP;
-      [[PrinterSDK defaultPrinterSDK] connectIP:testIP];
+      // [[PrinterSDK defaultPrinterSDK] connectIP:testIP];
       [NSThread sleepForTimeInterval:0.5];
     }
 
@@ -130,7 +129,7 @@ RCT_EXPORT_METHOD(getDeviceList
   } @catch (NSException *exception) {
     NSLog(@"No connection");
   }
-  [[PrinterSDK defaultPrinterSDK] disconnect];
+  // [[PrinterSDK defaultPrinterSDK] disconnect];
   is_scanning = NO;
   [self sendEventWithName:EVENT_SCANNER_RUNNING body:@NO];
 }
