@@ -15,8 +15,6 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/impelsystems/react-native-thermal-printer#readme.git", :tag => "v#{s.version}" }
   s.source_files  = "ios/**/*.{h,m}"
   s.requires_arc = true
-  s.ios.vendored_libraries = "ios/PrinterSDK/libPrinterSDK.a"
-  s.xcconfig = { 'HEADER_SEARCH_PATHS' => '"${PROJECT_DIR}/PrinterSDK"/**' }
 
   s.dependency 'React'
 end
