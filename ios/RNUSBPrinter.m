@@ -5,7 +5,7 @@
 //  Created by MTT on 06/12/19.
 //  Copyright © 2019 Facebook. All rights reserved.
 //
-
+#import <Foundation/Foundation.h>
 #import "RNUSBPrinter.h"
 
 @implementation RNUSBPrinter
@@ -13,6 +13,7 @@
 - (dispatch_queue_t)methodQueue {
   return dispatch_get_main_queue();
 }
+
 RCT_EXPORT_MODULE()
 
 RCT_EXPORT_METHOD(init
@@ -43,7 +44,6 @@ RCT_EXPORT_METHOD(connectPrinter
 
 RCT_EXPORT_METHOD(printRawData
                   : (NSString *)text printerOptions
-                  : (NSDictionary *)options fail
                   : (RCTResponseSenderBlock)errorCallback) {
   // TODO
   errorCallback(@[ @"This function is not supported" ]);
